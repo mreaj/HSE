@@ -10,6 +10,10 @@ import json
 CONFIG_PATH = os.path.expanduser(os.path.join("~", "hse_rag_config.json"))
 
 DEFAULT_CONFIG = {
+    # ---- Azure AD / Entra app registration ----
+    "TENANT_ID":     "<your-tenant-id>",
+    "CLIENT_ID":     "<your-app-client-id>",
+    "CLIENT_SECRET": "<your-app-client-secret>",
     # Must be registered as a *Web* redirect URI on the app registration:
     "REDIRECT_URI":  "http://localhost:8501",
 
@@ -37,13 +41,36 @@ DEFAULT_CONFIG = {
 
     # ---- HSE suggested questions ----
     "SUGGESTED": [
-        "Give all HSENs based on hand tools?",
-        "Can you give some precautions while blade transport?",
+        "What PPE is required for confined space entry?",
+        "Summarise the permit-to-work procedure.",
         "How many documents are in the knowledge base?",
+        "What does the standard say about working at height?",
+        "What are the steps in incident reporting?",
     ],
 }
 
 _cache = {"mtime": None, "cfg": None}
+
+
+def _streamlit_secrets():
+    """Read config values from st.secrets if present (top-level keys or an [hse] table).
+    Safe when there is no secrets file / not running under Streamlit."""
+    try:
+        import streamlit as st
+        secrets = st.secrets
+    except Exception:
+        return {}
+    out = {}
+    try:
+        for section in ("hse", "hse_rag", "HSE"):
+            if section in secrets:
+                out.update(dict(secrets[section]))
+        for k in DEFAULT_CONFIG:
+            if k in secrets:
+                out[k] = secrets[k]
+    except Exception:
+        return out
+    return out
 
 
 def load_config():
@@ -66,14 +93,18 @@ def load_config():
         save_config(cfg)
         cfg = _cache["cfg"]
 
-    # environment overrides for secrets
+    # overrides, lowest -> highest priority: file/defaults, then env vars, then st.secrets
     cfg = dict(cfg)
     for env, key in (("HSE_TENANT_ID", "TENANT_ID"),
                      ("HSE_CLIENT_ID", "CLIENT_ID"),
                      ("HSE_CLIENT_SECRET", "CLIENT_SECRET"),
-                     ("HSE_REDIRECT_URI", "REDIRECT_URI")):
+                     ("HSE_REDIRECT_URI", "REDIRECT_URI"),
+                     ("HSE_SITE_URL", "SITE_URL")):
         if os.environ.get(env):
             cfg[key] = os.environ[env]
+    for key, val in _streamlit_secrets().items():
+        if val not in (None, ""):
+            cfg[key] = val
     return cfg
 
 
