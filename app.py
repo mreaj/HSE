@@ -12,7 +12,7 @@ import vectorstore as vs
 import ingest
 import rag
 
-st.set_page_config(page_title="HSE Document Assistant", page_icon="🦺", layout="wide")
+st.set_page_config(page_title="HSEN Assistant", page_icon="🦺", layout="wide")
 
 
 # ------------------------------------------------------------------ helpers
@@ -240,7 +240,7 @@ def admin_tab():
 # ------------------------------------------------------------------ main
 def main():
     cfg = load_config()
-    st.title("🦺 HSE Document Assistant")
+    st.title("🦺 HSEN Assistant")
 
     if not config_ready(cfg):
         st.warning("Configuration is incomplete. Edit `~/hse_rag_config.json` "
