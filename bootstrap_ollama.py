@@ -10,9 +10,12 @@ import time
 import shutil
 import zipfile
 import subprocess
+import platform
 import urllib.request
 
 import certifi
+
+from config import load_config
 
 # SSL fix for restricted / corporate networks
 ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
@@ -20,7 +23,8 @@ ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=ce
 BASE_DIR = os.path.expanduser(os.path.join("~", "ollama"))
 ZIP_PATH = os.path.expanduser(os.path.join("~", "ollama.zip"))
 MODELS_DIR = os.path.expanduser(os.path.join("~", "ollama_models"))
-OLLAMA_URL = "http://localhost:11434"
+def _url():
+    return load_config().get("OLLAMA_URL", "http://localhost:11434")
 
 _state = {"exe": None}
 
@@ -35,11 +39,18 @@ def _find_exe():
 
 
 def install_ollama(log=print):
+    if is_running():
+        log(f"Ollama already serving at {_url()}")
+        return None
     exe = _find_exe()
     if exe:
         _state["exe"] = exe
         log(f"Ollama already available: {exe}")
         return exe
+    if platform.system() != "Windows":
+        raise RuntimeError(
+            "Ollama isn't reachable and auto-install only supports Windows. "
+            "Run this app where Ollama runs, or set OLLAMA_URL to a reachable endpoint.")
 
     log("Looking up latest Ollama release...")
     req = urllib.request.Request(
@@ -87,15 +98,22 @@ def _env():
 
 def is_running():
     try:
-        urllib.request.urlopen(OLLAMA_URL, timeout=2)
+        urllib.request.urlopen(_url(), timeout=2)
         return True
     except Exception:
         return False
 
 
 def ensure_serving(log=print):
+    cfg = load_config()
     if is_running():
+        log("Ollama reachable.")
         return
+    if not cfg.get("OLLAMA_AUTO_START", True):
+        raise RuntimeError(f"Ollama not reachable at {_url()} and auto-start is off.")
+    exe = _state.get("exe") or _find_exe()
+    if not exe:
+        raise RuntimeError(f"Ollama not reachable at {_url()} and no local binary to start.")
     subprocess.Popen("ollama serve", shell=True,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=_env())
     for _ in range(20):
@@ -103,7 +121,7 @@ def ensure_serving(log=print):
         if is_running():
             log("Ollama server ready.")
             return
-    raise RuntimeError("Ollama server did not start")
+    raise RuntimeError(f"Ollama server did not start (checked {_url()}).")
 
 
 def list_models():
@@ -133,10 +151,16 @@ def pull_model(model, log=print):
 
 
 def bootstrap(llm_model, embed_model, log=print):
-    """One-time: install + serve + ensure both models are present."""
+    """One-time: install + serve + ensure both models are present.
+    If Ollama is remote (no local binary), skip install/pull and just verify reachability."""
+    cfg = load_config()
+    if is_running() and not cfg.get("OLLAMA_AUTO_START", True):
+        log(f"Using existing Ollama at {_url()}")
+        return True
     install_ollama(log)
     ensure_serving(log)
-    pull_model(embed_model, log)
-    pull_model(llm_model, log)
+    if _find_exe() or shutil.which("ollama"):   # only pull when a local CLI exists
+        pull_model(embed_model, log)
+        pull_model(llm_model, log)
     log("Bootstrap complete.")
     return True
