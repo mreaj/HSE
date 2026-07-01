@@ -10,10 +10,6 @@ import json
 CONFIG_PATH = os.path.expanduser(os.path.join("~", "hse_rag_config.json"))
 
 DEFAULT_CONFIG = {
-    # ---- Azure AD / Entra app registration ----
-    "TENANT_ID":     "<your-tenant-id>",
-    "CLIENT_ID":     "<your-app-client-id>",
-    "CLIENT_SECRET": "<your-app-client-secret>",
     # Must be registered as a *Web* redirect URI on the app registration:
     "REDIRECT_URI":  "http://localhost:8501",
 
@@ -41,11 +37,9 @@ DEFAULT_CONFIG = {
 
     # ---- HSE suggested questions ----
     "SUGGESTED": [
-        "What PPE is required for confined space entry?",
-        "Summarise the permit-to-work procedure.",
+        "Give all HSENs based on hand tools?",
+        "Can you give some precautions while blade transport?",
         "How many documents are in the knowledge base?",
-        "What does the standard say about working at height?",
-        "What are the steps in incident reporting?",
     ],
 }
 
