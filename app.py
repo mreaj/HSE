@@ -248,8 +248,15 @@ def main():
         st.stop()
 
     handle_auth()
-    with st.spinner("Starting Ollama and loading models (first run downloads them)…"):
-        bootstrap(cfg["LLM_MODEL"], cfg["EMBED_MODEL"], config_ready(cfg))
+    try:
+        with st.spinner("Starting Ollama and loading models (first run downloads them)…"):
+            bootstrap(cfg["LLM_MODEL"], cfg["EMBED_MODEL"], config_ready(cfg))
+    except Exception as e:
+        st.error(f"LLM backend unavailable: {e}")
+        st.info("This app must run where Ollama is reachable — e.g. your Windows machine. "
+                "Streamlit Community Cloud cannot run a local LLM. Point OLLAMA_URL at a "
+                "reachable endpoint, or run the app on the host where Ollama runs.")
+        st.stop()
 
     with st.container():
         sign_in_widget()
