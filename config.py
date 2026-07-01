@@ -27,6 +27,10 @@ DEFAULT_CONFIG = {
     "LLM_MODEL":   "mistral:7b",
     "EMBED_MODEL": "nomic-embed-text",
 
+    # ---- Ollama endpoint ----
+    "OLLAMA_URL": "http://localhost:11434",
+    "OLLAMA_AUTO_START": True,   # False when pointing at an already-running Ollama
+
     # ---- Retrieval / generation ----
     "TOP_K": 6,
     "CHUNK_SIZE": 900,
@@ -99,7 +103,8 @@ def load_config():
                      ("HSE_CLIENT_ID", "CLIENT_ID"),
                      ("HSE_CLIENT_SECRET", "CLIENT_SECRET"),
                      ("HSE_REDIRECT_URI", "REDIRECT_URI"),
-                     ("HSE_SITE_URL", "SITE_URL")):
+                     ("HSE_SITE_URL", "SITE_URL"),
+                     ("HSE_OLLAMA_URL", "OLLAMA_URL")):
         if os.environ.get(env):
             cfg[key] = os.environ[env]
     for key, val in _streamlit_secrets().items():
