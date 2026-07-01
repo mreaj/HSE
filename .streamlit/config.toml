@@ -1,0 +1,10 @@
+[theme]
+primaryColor = "#e4572e"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f6f8"
+textColor = "#1b2a33"
+font = "sans serif"
+
+[server]
+# Streamlit's default port; must match REDIRECT_URI in the app registration.
+port = 8501
